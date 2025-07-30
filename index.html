@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Weather Dashboard</title>
+    <!-- Tailwind CSS CDN for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for a clean, modern typeface -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles for the entire page, applying the Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* Smooth scroll for anchor links */
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px; /* Width of the scrollbar */
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; /* Color of the track */
+            border-radius: 10px; /* Rounded corners for the track */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888; /* Color of the scroll thumb */
+            border-radius: 10px; /* Rounded corners for the thumb */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; /* Color of the thumb on hover */
+        }
+
+        /* Keyframe animation for a subtle fade-in effect on content load */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Applying the fade-in animation to relevant sections */
+        .fade-in-section {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        /* Custom styles for the unit toggle button */
+        .unit-toggle-button {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .unit-toggle-button.active {
+            background-color: #3b82f6; /* Blue-600 */
+            color: white;
+        }
+
+        /* Styling for the popular cities list items */
+        .popular-city-item {
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+        }
+
+        .popular-city-item:hover {
+            transform: translateY(-3px);
+            background-color: rgba(255, 255, 255, 0.2); /* Slightly brighter on hover */
+        }
+
+        /* Styling for hourly and daily forecast cards */
+        .forecast-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .forecast-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* Add a subtle shadow on hover */
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-400 to-purple-600 flex flex-col items-center justify-center p-4">
+
+    <!-- Main container for the weather application -->
+    <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-lg p-8 rounded-3xl shadow-2xl w-full max-w-4xl border border-gray-200 my-8">
+        <h1 class="text-5xl font-extrabold text-center text-gray-800 mb-8 tracking-tight">Weather Dashboard</h1>
+
+        <!-- Search form for city input -->
+        <form id="weather-form" class="flex flex-col sm:flex-row gap-4 mb-8">
+            <input
+                type="text"
+                id="city-input"
+                placeholder="Enter city name or zip code..."
+                class="flex-grow p-4 rounded-xl border border-gray-300 focus:ring-4 focus:ring-blue-500 focus:border-transparent outline-none transition duration-300 ease-in-out text-gray-700 text-lg"
+                aria-label="City or Zip Code"
+            />
+            <button
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-75 text-lg"
+                aria-label="Search Weather"
+            >
+                Search
+            </button>
+        </form>
+
+        <!-- Message box for displaying loading, error, or info messages -->
+        <div id="message-box" class="hidden bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl relative text-center mb-6 text-lg font-medium" role="alert">
+            <span id="message-text" class="block"></span>
+        </div>
+
+        <!-- Unit toggle buttons (Celsius/Fahrenheit) -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button id="celsius-btn" class="unit-toggle-button px-6 py-3 rounded-full text-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 active">°C</button>
+            <button id="fahrenheit-btn" class="unit-toggle-button px-6 py-3 rounded-full text-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300">°F</button>
+        </div>
+
+        <!-- Main weather display section -->
+        <div id="weather-display" class="hidden fade-in-section text-center mt-6">
+            <h2 id="display-city-name" class="text-4xl font-bold text-gray-800 mb-4"></h2>
+            <p id="current-date" class="text-lg text-gray-600 mb-6"></p>
+
+            <!-- Current weather overview -->
+            <div class="flex flex-col sm:flex-row items-center justify-center mb-8 bg-blue-50 p-6 rounded-2xl shadow-md">
+                <div class="flex items-center justify-center mb-4 sm:mb-0 sm:mr-8">
+                    <img id="current-weather-icon" src="" alt="Weather Icon" class="w-32 h-32" />
+                    <p id="current-temperature" class="text-7xl font-extrabold text-blue-700 ml-4"></p>
+                </div>
+                <div class="text-left">
+                    <p id="current-description" class="text-3xl text-gray-700 capitalize mb-2"></p>
+                    <p class="text-xl text-gray-600">Feels like: <span id="current-feels-like" class="font-semibold"></span></p>
+                </div>
+            </div>
+
+            <!-- Detailed current weather information -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-700 mb-12">
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Humidity</p>
+                    <p id="current-humidity" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Wind Speed</p>
+                    <p id="current-wind-speed" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Pressure</p>
+                    <p id="current-pressure" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Visibility</p>
+                    <p id="current-visibility" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">UV Index</p>
+                    <p id="current-uvi" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Dew Point</p>
+                    <p id="current-dew-point" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Cloudiness</p>
+                    <p id="current-cloudiness" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Rain (1h)</p>
+                    <p id="current-rain-1h" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Sunrise</p>
+                    <p id="current-sunrise" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-2xl shadow-sm flex flex-col items-center">
+                    <p class="font-semibold text-lg mb-1">Sunset</p>
+                    <p id="current-sunset" class="text-2xl font-bold text-blue-800"></p>
+                </div>
+            </div>
+
+            <!-- Hourly Forecast Section -->
+            <h3 class="text-3xl font-bold text-gray-800 mb-6 text-left">Hourly Forecast (Next 48 Hours)</h3>
+            <div id="hourly-forecast-container" class="flex overflow-x-auto pb-4 space-x-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+                <!-- Hourly forecast cards will be injected here by JavaScript -->
+            </div>
+
+            <!-- Daily Forecast Section -->
+            <h3 class="text-3xl font-bold text-gray-800 mt-12 mb-6 text-left">8-Day Forecast</h3>
+            <div id="daily-forecast-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Daily forecast cards will be injected here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Popular Cities Section -->
+        <div class="mt-12 p-6 bg-blue-100 rounded-2xl shadow-md">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Popular Indian Cities</h3>
+            <div id="popular-cities-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Popular cities will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript logic for fetching and displaying weather data -->
+    <script>
+        // --- DOM Element Selectors ---
+        const weatherForm = document.getElementById('weather-form');
+        const cityInput = document.getElementById('city-input');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const weatherDisplay = document.getElementById('weather-display');
+        const displayCityName = document.getElementById('display-city-name');
+        const currentDateElem = document.getElementById('current-date');
+        const currentWeatherIcon = document.getElementById('current-weather-icon');
+        const currentTemperature = document.getElementById('current-temperature');
+        const currentDescription = document.getElementById('current-description');
+        const currentFeelsLike = document.getElementById('current-feels-like');
+        const currentHumidity = document.getElementById('current-humidity');
+        const currentWindSpeed = document.getElementById('current-wind-speed');
+        const currentPressure = document.getElementById('current-pressure');
+        const currentVisibility = document.getElementById('current-visibility');
+        const currentUVI = document.getElementById('current-uvi'); // New: UV Index
+        const currentDewPoint = document.getElementById('current-dew-point'); // New: Dew Point
+        const currentCloudiness = document.getElementById('current-cloudiness'); // New: Cloudiness
+        const currentRain1h = document.getElementById('current-rain-1h'); // New: Rain (1h)
+        const currentSunrise = document.getElementById('current-sunrise');
+        const currentSunset = document.getElementById('current-sunset');
+        const hourlyForecastContainer = document.getElementById('hourly-forecast-container');
+        const dailyForecastContainer = document.getElementById('daily-forecast-container');
+        const celsiusBtn = document.getElementById('celsius-btn');
+        const fahrenheitBtn = document.getElementById('fahrenheit-btn');
+        const popularCitiesList = document.getElementById('popular-cities-list');
+
+        // --- API Key and Base URLs ---
+        // IMPORTANT: Replace with your actual OpenWeatherMap API key.
+        // You can get one by signing up at https://openweathermap.org/api
+        // In a Canvas environment, the API_KEY will be provided at runtime.
+        const API_KEY = "";
+        const GEOCODING_API_URL = "https://api.openweathermap.org/geo/1.0/direct";
+        const ONE_CALL_API_URL = "https://api.openweathermap.org/data/3.0/onecall"; // Using One Call API 3.0
+        const WEATHER_ICON_BASE_URL = "http://openweathermap.org/img/wn/";
+
+        // --- Global State Variables ---
+        let currentUnit = 'metric'; // 'metric' for Celsius, 'imperial' for Fahrenheit
+        let currentWeatherData = null; // Stores the full weather data object for unit conversion
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts Kelvin to Celsius.
+         * @param {number} kelvin - Temperature in Kelvin.
+         * @returns {number} Temperature in Celsius.
+         */
+        function kelvinToCelsius(kelvin) {
+            return kelvin - 273.15;
+        }
+
+        /**
+         * Converts Celsius to Fahrenheit.
+         * @param {number} celsius - Temperature in Celsius.
+         * @returns {number} Temperature in Fahrenheit.
+         */
+        function celsiusToFahrenheit(celsius) {
+            return (celsius * 9 / 5) + 32;
+        }
+
+        /**
+         * Formats a Unix timestamp into a readable time string (e.g., "HH:MM AM/PM").
+         * @param {number} timestamp - Unix timestamp.
+         * @param {number} timezoneOffset - Timezone offset in seconds from UTC.
+         * @returns {string} Formatted time string.
+         */
+        function formatTime(timestamp, timezoneOffset) {
+            const date = new Date((timestamp + timezoneOffset) * 1000);
+            const hours = date.getUTCHours();
+            const minutes = date.getUTCMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+            return `${formattedHours}:${minutes < 10 ? '0' : ''}${minutes} ${ampm}`;
+        }
+
+        /**
+         * Formats a Unix timestamp into a readable date string (e.g., "Day, Month DD").
+         * @param {number} timestamp - Unix timestamp.
+         * @returns {string} Formatted date string.
+         */
+        function formatDate(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        /**
+         * Formats a Unix timestamp into a short day name (e.g., "Mon").
+         * @param {number} timestamp - Unix timestamp.
+         * @returns {string} Short day name.
+         */
+        function formatDayShort(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const options = { weekday: 'short' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        /**
+         * Formats a Unix timestamp into a short time string (e.g., "1 PM").
+         * @param {number} timestamp - Unix timestamp.
+         * @param {number} timezoneOffset - Timezone offset in seconds from UTC.
+         * @returns {string} Short time string.
+         */
+        function formatHourlyTime(timestamp, timezoneOffset) {
+            const date = new Date((timestamp + timezoneOffset) * 1000);
+            const hours = date.getUTCHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+            return `${formattedHours} ${ampm}`;
+        }
+
+        /**
+         * Gets the full URL for a weather icon.
+         * @param {string} iconCode - The icon code from OpenWeatherMap API.
+         * @returns {string} Full URL to the weather icon.
+         */
+        function getWeatherIconUrl(iconCode) {
+            return `${WEATHER_ICON_BASE_URL}${iconCode}@2x.png`;
+        }
+
+        /**
+         * Converts moon phase value to a human-readable string.
+         * @param {number} moonPhase - Moon phase value (0 to 1).
+         * @returns {string} Moon phase description.
+         */
+        function getMoonPhaseDescription(moonPhase) {
+            if (moonPhase === 0 || moonPhase === 1) return 'New Moon';
+            if (moonPhase > 0 && moonPhase < 0.25) return 'Waxing Crescent';
+            if (moonPhase === 0.25) return 'First Quarter';
+            if (moonPhase > 0.25 && moonPhase < 0.5) return 'Waxing Gibbous';
+            if (moonPhase === 0.5) return 'Full Moon';
+            if (moonPhase > 0.5 && moonPhase < 0.75) return 'Waning Gibbous';
+            if (moonPhase === 0.75) return 'Last Quarter';
+            if (moonPhase > 0.75 && moonPhase < 1) return 'Waning Crescent';
+            return 'Unknown';
+        }
+
+        /**
+         * Displays a message in the message box.
+         * @param {string} message - The message to display.
+         * @param {string} type - The type of message ('error', 'info', 'loading').
+         */
+        function showMessage(message, type = 'info') {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-red-100', 'border-red-400', 'text-red-700', 'bg-blue-100', 'border-blue-400', 'text-blue-700', 'bg-yellow-100', 'border-yellow-400', 'text-yellow-700');
+
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
+            } else if (type === 'loading') {
+                messageBox.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+            } else { // info
+                messageBox.classList.add('bg-yellow-100', 'border-yellow-400', 'text-yellow-700');
+            }
+            messageBox.classList.remove('hidden');
+            weatherDisplay.classList.add('hidden'); // Hide weather display when message is shown
+        }
+
+        /**
+         * Hides the message box.
+         */
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // --- Core Weather Fetching Logic ---
+
+        /**
+         * Fetches geographical coordinates for a given city name using OpenWeatherMap Geocoding API.
+         * @param {string} city - The city name to search for.
+         * @returns {Promise<object|null>} A promise that resolves to an object with lat/lon or null if not found.
+         */
+        async function getCoordinates(city) {
+            try {
+                const response = await fetch(`${GEOCODING_API_URL}?q=${city}&limit=1&appid=${API_KEY}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.length > 0) {
+                    return { lat: data[0].lat, lon: data[0].lon, name: data[0].name, country: data[0].country };
+                } else {
+                    return null; // City not found
+                }
+            } catch (error) {
+                console.error("Error fetching coordinates:", error);
+                throw new Error("Could not get city coordinates. Please try again.");
+            }
+        }
+
+        /**
+         * Fetches comprehensive weather data (current, hourly, daily) using OpenWeatherMap One Call API.
+         * @param {number} lat - Latitude of the location.
+         * @param {number} lon - Longitude of the location.
+         * @returns {Promise<object>} A promise that resolves to the weather data object.
+         */
+        async function fetchComprehensiveWeatherData(lat, lon) {
+            try {
+                // Exclude minutely alerts for simplicity and to reduce data payload
+                const response = await fetch(`${ONE_CALL_API_URL}?lat=${lat}&lon=${lon}&exclude=minutely,alerts&appid=${API_KEY}&units=metric`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Error fetching comprehensive weather data:", error);
+                throw new Error("Could not fetch detailed weather data. Please try again.");
+            }
+        }
+
+        /**
+         * Main function to fetch and display all weather information.
+         * @param {string} city - The city name to fetch weather for.
+         */
+        async function fetchAndDisplayWeather(city) {
+            hideMessage(); // Clear any previous messages
+            weatherDisplay.classList.add('hidden'); // Hide previous weather data
+            showMessage('Loading weather data...', 'loading'); // Show loading message
+
+            if (!API_KEY) {
+                showMessage("API Key is missing. Please sign up at OpenWeatherMap to get one.", 'error');
+                return;
+            }
+
+            try {
+                // Step 1: Get coordinates for the city
+                const coords = await getCoordinates(city);
+                if (!coords) {
+                    showMessage('City not found. Please check the spelling or try a different city.', 'error');
+                    return;
+                }
+
+                // Step 2: Fetch comprehensive weather data using coordinates
+                const data = await fetchComprehensiveWeatherData(coords.lat, coords.lon);
+                currentWeatherData = { ...data, name: coords.name, country: coords.country }; // Store full data with city name
+                updateWeatherDisplay(); // Update display based on current unit
+                hideMessage(); // Hide loading message on success
+                weatherDisplay.classList.remove('hidden'); // Show the weather display
+                weatherDisplay.classList.add('fade-in-section'); // Apply fade-in animation
+            } catch (error) {
+                console.error("Overall weather fetch error:", error);
+                showMessage(`Failed to fetch weather data: ${error.message}`, 'error');
+            }
+        }
+
+        // --- Display Functions ---
+
+        /**
+         * Updates the entire weather display based on the current unit and stored data.
+         */
+        function updateWeatherDisplay() {
+            if (!currentWeatherData) return;
+
+            const data = currentWeatherData;
+            const timezoneOffset = data.timezone_offset; // Timezone offset from UTC in seconds
+
+            // --- Update Current Weather Section ---
+            displayCityName.textContent = `${data.name}, ${data.country}`;
+            currentDateElem.textContent = formatDate(data.current.dt);
+
+            const currentTemp = currentUnit === 'metric' ?
+                                Math.round(data.current.temp) :
+                                Math.round(celsiusToFahrenheit(data.current.temp));
+            currentTemperature.textContent = `${currentTemp}°${currentUnit === 'metric' ? 'C' : 'F'}`;
+
+            currentDescription.textContent = data.current.weather[0].description;
+            currentWeatherIcon.src = getWeatherIconUrl(data.current.weather[0].icon);
+            currentWeatherIcon.alt = data.current.weather[0].description;
+
+            const feelsLikeTemp = currentUnit === 'metric' ?
+                                  Math.round(data.current.feels_like) :
+                                  Math.round(celsiusToFahrenheit(data.current.feels_like));
+            currentFeelsLike.textContent = `${feelsLikeTemp}°${currentUnit === 'metric' ? 'C' : 'F'}`;
+
+            currentHumidity.textContent = `${data.current.humidity}%`;
+            currentWindSpeed.textContent = `${data.current.wind_speed} m/s`; // OpenWeatherMap always returns m/s for One Call API 3.0
+            currentPressure.textContent = `${data.current.pressure} hPa`;
+            currentVisibility.textContent = `${(data.current.visibility / 1000).toFixed(1)} km`; // Convert meters to kilometers
+
+            currentUVI.textContent = data.current.uvi ? data.current.uvi.toFixed(1) : 'N/A';
+            const dewPointTemp = currentUnit === 'metric' ?
+                                 Math.round(data.current.dew_point) :
+                                 Math.round(celsiusToFahrenheit(data.current.dew_point));
+            currentDewPoint.textContent = `${dewPointTemp}°${currentUnit === 'metric' ? 'C' : 'F'}`;
+            currentCloudiness.textContent = `${data.current.clouds}%`;
+            currentRain1h.textContent = data.current.rain && data.current.rain['1h'] ? `${data.current.rain['1h'].toFixed(1)} mm` : '0 mm';
+
+
+            currentSunrise.textContent = formatTime(data.current.sunrise, timezoneOffset);
+            currentSunset.textContent = formatTime(data.current.sunset, timezoneOffset);
+
+            // --- Update Hourly Forecast ---
+            // Slice to get next 48 hours (index 1 to 49, as 0 is current hour)
+            displayHourlyForecast(data.hourly.slice(1, 49), timezoneOffset);
+
+            // --- Update Daily Forecast ---
+            // Slice to get next 8 days (index 1 to 8, as 0 is current day)
+            displayDailyForecast(data.daily.slice(1, 9));
+        }
+
+        /**
+         * Displays the hourly forecast in the dedicated container.
+         * @param {Array<object>} hourlyData - Array of hourly forecast objects.
+         * @param {number} timezoneOffset - Timezone offset in seconds from UTC.
+         */
+        function displayHourlyForecast(hourlyData, timezoneOffset) {
+            hourlyForecastContainer.innerHTML = ''; // Clear previous hourly data
+
+            hourlyData.forEach(hour => {
+                const temp = currentUnit === 'metric' ?
+                             Math.round(hour.temp) :
+                             Math.round(celsiusToFahrenheit(hour.temp));
+                const feelsLike = currentUnit === 'metric' ?
+                                  Math.round(hour.feels_like) :
+                                  Math.round(celsiusToFahrenheit(hour.feels_like));
+                const time = formatHourlyTime(hour.dt, timezoneOffset);
+                const icon = getWeatherIconUrl(hour.weather[0].icon);
+                const description = hour.weather[0].description;
+                const pop = (hour.pop * 100).toFixed(0); // Probability of Precipitation
+                const rainVolume = hour.rain && hour.rain['1h'] ? hour.rain['1h'].toFixed(1) : '0';
+                const humidity = hour.humidity;
+                const cloudiness = hour.clouds;
+
+
+                const card = `
+                    <div class="forecast-card flex-shrink-0 w-36 bg-blue-50 p-4 rounded-xl shadow-md text-center flex flex-col items-center justify-between">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">${time}</p>
+                        <img src="${icon}" alt="${description}" class="w-16 h-16 mb-2">
+                        <p class="text-xl font-bold text-blue-800 mb-1">${temp}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                        <p class="text-xs text-gray-600">Feels: ${feelsLike}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                        <p class="text-xs text-gray-600 capitalize mt-1">${description}</p>
+                        <p class="text-xs text-gray-600 mt-1">POP: ${pop}%</p>
+                        <p class="text-xs text-gray-600">Rain: ${rainVolume} mm</p>
+                        <p class="text-xs text-gray-600">Humidity: ${humidity}%</p>
+                        <p class="text-xs text-gray-600">Clouds: ${cloudiness}%</p>
+                    </div>
+                `;
+                hourlyForecastContainer.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        /**
+         * Displays the daily forecast in the dedicated container.
+         * @param {Array<object>} dailyData - Array of daily forecast objects.
+         */
+        function displayDailyForecast(dailyData) {
+            dailyForecastContainer.innerHTML = ''; // Clear previous daily data
+
+            dailyData.forEach(day => {
+                const dayName = formatDayShort(day.dt);
+                const tempMin = currentUnit === 'metric' ?
+                                Math.round(day.temp.min) :
+                                Math.round(celsiusToFahrenheit(day.temp.min));
+                const tempMax = currentUnit === 'metric' ?
+                                Math.round(day.temp.max) :
+                                Math.round(celsiusToFahrenheit(day.temp.max));
+                const tempMorn = currentUnit === 'metric' ? Math.round(day.temp.morn) : Math.round(celsiusToFahrenheit(day.temp.morn));
+                const tempDay = currentUnit === 'metric' ? Math.round(day.temp.day) : Math.round(celsiusToFahrenheit(day.temp.day));
+                const tempEve = currentUnit === 'metric' ? Math.round(day.temp.eve) : Math.round(celsiusToFahrenheit(day.temp.eve));
+                const tempNight = currentUnit === 'metric' ? Math.round(day.temp.night) : Math.round(celsiusToFahrenheit(day.temp.night));
+
+                const icon = getWeatherIconUrl(day.weather[0].icon);
+                const description = day.weather[0].description;
+                const pop = (day.pop * 100).toFixed(0); // Probability of Precipitation
+                const rainVolume = day.rain ? day.rain.toFixed(1) : '0';
+                const snowVolume = day.snow ? day.snow.toFixed(1) : '0';
+                const uvi = day.uvi ? day.uvi.toFixed(1) : 'N/A';
+                const dewPoint = currentUnit === 'metric' ? Math.round(day.dew_point) : Math.round(celsiusToFahrenheit(day.dew_point));
+                const cloudiness = day.clouds;
+                const sunrise = formatTime(day.sunrise, currentWeatherData.timezone_offset);
+                const sunset = formatTime(day.sunset, currentWeatherData.timezone_offset);
+                const moonrise = formatTime(day.moonrise, currentWeatherData.timezone_offset);
+                const moonset = formatTime(day.moonset, currentWeatherData.timezone_offset);
+                const moonPhase = getMoonPhaseDescription(day.moon_phase);
+
+
+                const card = `
+                    <div class="forecast-card bg-blue-50 p-6 rounded-2xl shadow-md text-center flex flex-col items-center">
+                        <p class="text-lg font-semibold text-gray-700 mb-3">${dayName}</p>
+                        <img src="${icon}" alt="${description}" class="w-20 h-20 mb-3">
+                        <p class="text-xl font-bold text-blue-800 mb-1">${tempMax}°${currentUnit === 'metric' ? 'C' : 'F'} / ${tempMin}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                        <p class="text-sm text-gray-600 capitalize mt-2">${description}</p>
+                        <div class="text-sm text-gray-700 mt-3 grid grid-cols-2 gap-x-2 gap-y-1 w-full">
+                            <p class="text-left"><span class="font-semibold">Morn:</span> ${tempMorn}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                            <p class="text-left"><span class="font-semibold">Day:</span> ${tempDay}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                            <p class="text-left"><span class="font-semibold">Eve:</span> ${tempEve}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                            <p class="text-left"><span class="font-semibold">Night:</span> ${tempNight}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                        </div>
+                        <div class="text-sm text-gray-700 mt-3 grid grid-cols-2 gap-x-2 gap-y-1 w-full">
+                            <p class="text-left"><span class="font-semibold">POP:</span> ${pop}%</p>
+                            <p class="text-left"><span class="font-semibold">Rain:</span> ${rainVolume} mm</p>
+                            <p class="text-left"><span class="font-semibold">Snow:</span> ${snowVolume} mm</p>
+                            <p class="text-left"><span class="font-semibold">UVI:</span> ${uvi}</p>
+                            <p class="text-left"><span class="font-semibold">Dew Pt:</span> ${dewPoint}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
+                            <p class="text-left"><span class="font-semibold">Clouds:</span> ${cloudiness}%</p>
+                            <p class="text-left"><span class="font-semibold">Sunrise:</span> ${sunrise}</p>
+                            <p class="text-left"><span class="font-semibold">Sunset:</span> ${sunset}</p>
+                            <p class="text-left col-span-2"><span class="font-semibold">Moon:</span> ${moonPhase}</p>
+                            <p class="text-left col-span-2"><span class="font-semibold">Moonrise:</span> ${moonrise}</p>
+                            <p class="text-left col-span-2"><span class="font-semibold">Moonset:</span> ${moonset}</p>
+                        </div>
+                    </div>
+                `;
+                dailyForecastContainer.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        /**
+         * Renders a list of popular cities that can be clicked to fetch weather.
+         */
+        function renderPopularCities() {
+            // Updated list to include more prominent Indian cities
+            const popularCities = [
+                'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata',
+                'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'
+            ];
+
+            popularCitiesList.innerHTML = ''; // Clear previous list
+
+            popularCities.forEach(city => {
+                const cityItem = document.createElement('div');
+                cityItem.classList.add(
+                    'popular-city-item',
+                    'bg-white', 'bg-opacity-50', 'p-4', 'rounded-xl',
+                    'shadow-sm', 'text-center', 'font-medium', 'text-gray-700',
+                    'hover:bg-opacity-70', 'transition', 'duration-200'
+                );
+                cityItem.textContent = city;
+                cityItem.addEventListener('click', () => {
+                    cityInput.value = city; // Set city in input field
+                    fetchAndDisplayWeather(city); // Fetch weather for clicked city
+                });
+                popularCitiesList.appendChild(cityItem);
+            });
+        }
+
+        // --- Event Listeners ---
+
+        // Event listener for the main weather search form submission
+        weatherForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent default form submission (page reload)
+            const city = cityInput.value.trim(); // Get trimmed city name from input
+            if (city) {
+                fetchAndDisplayWeather(city); // Call function to fetch and display weather
+            } else {
+                showMessage('Please enter a city name or zip code.', 'error'); // Show error if input is empty
+            }
+        });
+
+        // Event listener for Celsius button click
+        celsiusBtn.addEventListener('click', () => {
+            if (currentUnit !== 'metric') {
+                currentUnit = 'metric';
+                celsiusBtn.classList.add('active');
+                fahrenheitBtn.classList.remove('active');
+                updateWeatherDisplay(); // Re-render display with new unit
+            }
+        });
+
+        // Event listener for Fahrenheit button click
+        fahrenheitBtn.addEventListener('click', () => {
+            if (currentUnit !== 'imperial') {
+                currentUnit = 'imperial';
+                fahrenheitBtn.classList.add('active');
+                celsiusBtn.classList.remove('active');
+                updateWeatherDisplay(); // Re-render display with new unit
+            }
+        });
+
+        // --- Initial Load Logic ---
+
+        // This function runs when the entire page (including all resources) has loaded.
+        window.addEventListener('load', () => {
+            // Set initial active state for Celsius button
+            celsiusBtn.classList.add('active');
+            // Render the popular cities list
+            renderPopularCities();
+            // Fetch weather for a default Indian city (e.g., "Mumbai") on page load
+            fetchAndDisplayWeather('Mumbai');
+        });
+    </script>
+</body>
+</html>
