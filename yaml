@@ -3,3 +3,32 @@
 
 ## 📝 2. IBM Submission Statement (PDF/Portal Summary)
 
+
+---
+
+## 🎬 3. Demo Video Script (for screen recording)
+
+> “Hello everyone, my name is **Pankaj Kumar**, and this is my **Interactive Weather Forecast Web Application**, developed using **React.js**, **Tailwind CSS**, HTML, and JavaScript as part of my **IBM Internship project**.
+>
+> On the homepage, users can:
+> - Search any city to get current weather data.
+> - Allow the browser to detect their current location.
+> - View temperature, humidity, wind speed, and a weather condition icon.
+> - Toggle between light and dark mode.
+> - See live time and date at the top.
+>
+> The design is mobile-friendly and inspired by Google Weather UI.
+> The project uses the **OpenWeatherMap API** to fetch real-time data.
+>
+> Thank you!”
+
+---
+
+## 📂 4. Optional Add-ons
+
+Would you like me to also generate:
+- 🧾 `project-report.pdf` for academic or corporate review?
+- 📦 Deployment instructions (e.g., GitHub Pages / Vercel)?
+- 📄 Certificate template for your project completion?
+
+Just say the word, and I’ll prepare it!
