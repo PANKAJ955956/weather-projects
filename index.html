@@ -233,7 +233,8 @@
         // IMPORTANT: Replace with your actual OpenWeatherMap API key.
         // You can get one by signing up at https://openweathermap.org/api
         // In a Canvas environment, the API_KEY will be provided at runtime.
-        const API_KEY = "";
+        const geoApiUrl = "https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}";
+
         const GEOCODING_API_URL = "https://api.openweathermap.org/geo/1.0/direct";
         const ONE_CALL_API_URL = "https://api.openweathermap.org/data/3.0/onecall"; // Using One Call API 3.0
         const WEATHER_ICON_BASE_URL = "http://openweathermap.org/img/wn/";
@@ -422,6 +423,7 @@
             showMessage('Loading weather data...', 'loading'); // Show loading message
 
             if (!API_KEY) {
+            
                 showMessage("API Key is missing. Please sign up at OpenWeatherMap to get one.", 'error');
                 return;
             }
